@@ -13,7 +13,7 @@ import (
 var (
 	registry = prometheus.NewRegistry()
 
-	namespace = "codelab"
+	namespace = "observe_loadtest"
 	subsystem = "api"
 
 	requestHistogram = prometheus.NewHistogramVec(
@@ -74,58 +74,20 @@ type responseOpts struct {
 	outageDuration time.Duration
 }
 
-var opts = map[string]map[string]responseOpts{
-	"/api/foo": map[string]responseOpts{
-		"GET": responseOpts{
-			baseLatency:    10 * time.Millisecond,
-			errorRatio:     0.005,
-			outageDuration: 23 * time.Second,
-		},
-		"POST": responseOpts{
-			baseLatency:    20 * time.Millisecond,
-			errorRatio:     0.02,
-			outageDuration: time.Minute,
-		},
-	},
-	"/api/bar": map[string]responseOpts{
-		"GET": responseOpts{
-			baseLatency:    15 * time.Millisecond,
-			errorRatio:     0.0025,
-			outageDuration: 13 * time.Second,
-		},
-		"POST": responseOpts{
-			baseLatency:    50 * time.Millisecond,
-			errorRatio:     0.01,
-			outageDuration: 47 * time.Second,
-		},
-	},
-	"/api/baz": map[string]responseOpts{
-		"GET": responseOpts{
-			baseLatency:    2 * time.Millisecond,
-			errorRatio:     0.01,
-			outageDuration: 1 * time.Second,
-		},
-		"POST": responseOpts{
-			baseLatency:    4 * time.Millisecond,
-			errorRatio:     0.02,
-			outageDuration: 2 * time.Second,
-		},
-	},
-	"/api/boom": map[string]responseOpts{
-		"GET": responseOpts{
-			baseLatency:    5 * time.Millisecond,
-			errorRatio:     0.01,
-			outageDuration: 1 * time.Second,
-		},
-		"POST": responseOpts{
-			baseLatency:    14 * time.Millisecond,
-			errorRatio:     0.02,
-			outageDuration: 2 * time.Second,
-		},
-	},
-}
 
 func handleAPI(method, path string) {
+	getRandomResponseOpts := func() responseOpts {
+		randFloat := func(min, max float64) float64 {
+			return min + rand.Float64() * (max - min)
+		}
+
+		return responseOpts{
+			baseLatency:    time.Duration(1 + rand.Intn(100)) * time.Millisecond,
+			errorRatio:     randFloat(0.001, 0.05),
+			outageDuration: time.Duration(1 + rand.Intn(50)) * time.Second,
+		}
+	}
+
 	requestsInProgress.Inc()
 	status := http.StatusOK
 	duration := time.Millisecond
@@ -140,25 +102,17 @@ func handleAPI(method, path string) {
 		requestsTotal.WithLabelValues(method, path, fmt.Sprint(status)).Inc()
 	}()
 
-	pathOpts, ok := opts[path]
-	if !ok {
-		status = http.StatusNotFound
-		return
-	}
-	methodOpts, ok := pathOpts[method]
-	if !ok {
-		status = http.StatusMethodNotAllowed
-		return
-	}
+	response := getRandomResponseOpts()
+
 	latencyFactor := time.Duration(1)
 	errorFactor := 1.
-	if time.Since(start)%(10*methodOpts.outageDuration) < methodOpts.outageDuration {
+	if time.Since(start)%(10*response.outageDuration) < response.outageDuration {
 		latencyFactor *= 3
 		errorFactor *= 10
 	}
-	duration = (methodOpts.baseLatency + time.Duration(rand.NormFloat64()*float64(methodOpts.baseLatency)/10)) * latencyFactor
+	duration = (response.baseLatency + time.Duration(rand.NormFloat64()*float64(response.baseLatency)/10)) * latencyFactor
 
-	if rand.Float64() <= methodOpts.errorRatio*errorFactor {
+	if rand.Float64() <= response.errorRatio*errorFactor {
 		status = http.StatusInternalServerError
 		requestErrorsTotal.WithLabelValues(method, path, fmt.Sprint(status)).Inc()
 	}
