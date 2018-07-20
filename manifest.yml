@@ -1,0 +1,11 @@
+---
+applications:
+- name: re-observe-test-server
+  memory: 100M
+  instances: 1
+  buildpack: go_buildpack
+  health-check-type: none
+  env:
+    GOPACKAGENAME: github.com/alphagov/re-observe-test-server
+routes:
+  - route: re-observe-test-server.cloudapps.digital
