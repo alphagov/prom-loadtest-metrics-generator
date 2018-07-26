@@ -1,0 +1,13 @@
+---
+applications:
+- name: prom-loadtest-metrics-generator
+  memory: 100M
+  instances: 1
+  buildpack: go_buildpack
+  health-check-type: none
+  env:
+    GOPACKAGENAME: github.com/alphagov/prom-loadtest-metrics-generator
+    ENDPOINT_COUNT: 20
+    ROUTE_COUNT: 50
+routes:
+  - route: prom-loadtest-metrics-generator.cloudapps.digital
