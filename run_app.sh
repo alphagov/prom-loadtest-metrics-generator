@@ -8,7 +8,7 @@ echo "
     scheme: https
     scrape_interval: ${2}s
     static_configs:
-      - targets: [\"prom-loadtest-metrics-generator.cloudapps.digital\"]
+      - targets: [\"test-prom-loadtest-metrics-generator.cloudapps.digital\"]
 "
 }
 

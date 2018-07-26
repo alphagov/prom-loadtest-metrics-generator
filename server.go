@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	_ "net/http/pprof"
@@ -51,6 +52,33 @@ var (
 		},
 		[]string{"method", "path", "status"},
 	)
+	testCounterTotalInit = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "test_init_counter_total",
+			Help:      "Total number of init counter",
+		},
+		[]string{"test_label"},
+	)
+	testCounterTotalLaterInit = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "test_later_init_counter_total",
+			Help:      "Total number of later init counter",
+		},
+		[]string{"test_label"},
+	)
+	testCounterTotal = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Namespace: namespace,
+			Subsystem: subsystem,
+			Name:      "test_counter_total",
+			Help:      "Total number of counter",
+		},
+		[]string{"test_label"},
+	)
 )
 
 func init() {
@@ -59,7 +87,11 @@ func init() {
 		requestErrorsTotal,
 		requestHistogram,
 		requestsInProgress,
+		testCounterTotalInit,
+		testCounterTotalLaterInit,
 	)
+
+	testCounterTotalInit.WithLabelValues("test_init")
 }
 
 type responseOpts struct {
@@ -116,4 +148,17 @@ func handleAPI(method, path string) {
 		status = http.StatusInternalServerError
 		requestErrorsTotal.WithLabelValues(method, path, fmt.Sprint(status)).Inc()
 	}
+}
+
+func handleTestAPI(testLabel string, register bool) {
+	log.Print("Test counter")
+	if register {
+		registry.MustRegister(
+			testCounterTotal,
+		)
+		testCounterTotalLaterInit.WithLabelValues("test_later_init")
+	}
+	testCounterTotal.WithLabelValues(testLabel).Inc()
+	testCounterTotalInit.WithLabelValues("test_init").Inc()
+	testCounterTotalLaterInit.WithLabelValues("test_later_init").Inc()
 }

@@ -25,5 +25,9 @@ func runClient() {
 		go doGet(i)
 	}
 
+	time.Sleep(10 * time.Second)
+	handleTestAPI("test_inc", true)
+	handleTestAPI("test_inc", false)
+
 	select {}
 }

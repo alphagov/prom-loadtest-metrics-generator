@@ -1,6 +1,6 @@
 ---
 applications:
-- name: prom-loadtest-metrics-generator
+- name: test-prom-loadtest-metrics-generator
   memory: 100M
   instances: 1
   buildpack: go_buildpack
@@ -10,4 +10,4 @@ applications:
     ENDPOINT_COUNT: 20
     ROUTE_COUNT: 50
 routes:
-  - route: prom-loadtest-metrics-generator.cloudapps.digital
+  - route: test-prom-loadtest-metrics-generator.cloudapps.digital
